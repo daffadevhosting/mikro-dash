@@ -1,0 +1,484 @@
+---
+layout: default
+title: Setting Router
+permalink: /settings
+---
+
+<div class="container mt-4">
+  <h4 class="mb-4"><i class="bi bi-gear me-2"></i>Pengaturan Sistem</h4>
+
+<div class="row">
+<div class="col-md-6 mb-3">
+  <!-- Router Settings -->
+  <div class="card mb-4 shadow-sm">
+<div class="card-header bg-dark text-light d-flex justify-content-between align-items-center">
+  <div>
+    <i class="bi bi-hdd-network me-2"></i>Router Mikrotik
+  </div>
+  <div>
+    <button class="btn btn-outline-primary me-2" id="edit-router-btn">
+      <i class="bi bi-pencil-square"></i>
+    </button>
+    <button class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalKoneksi">
+      <i class="bi bi-link-45deg"></i> Test Koneksi
+    </button>
+  </div>
+</div>
+
+    <div class="card-body" id="router-card-body">
+      <!-- Loading Spinner -->
+      <div id="router-loading" class="text-center my-4" style="display: none;">
+        <div class="spinner-border text-success" role="status"></div>
+        <div>Loading...</div>
+      </div>
+
+      <!-- Form Input -->
+      <div id="router-form">
+        <form id="form-router">
+          <div class="mb-3">
+            <label for="name" class="form-label">Nama Router</label>
+            <input type="text" class="form-control" name="name" required>
+          </div>
+          <div class="mb-3">
+            <label for="ip" class="form-label">IP Address</label>
+            <input type="text" class="form-control" name="ip" required>
+          </div>
+          <div class="mb-3">
+            <label for="username" class="form-label">Username</label>
+            <input type="text" class="form-control" name="username" required>
+          </div>
+          <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" class="form-control" name="password" required>
+          </div>
+          <button class="btn btn-success" type="submit">
+            <i class="bi bi-save me-1"></i>Simpan
+          </button>
+        </form>
+      </div>
+
+      <!-- Router Info -->
+      <div id="router-info" style="display:none;">
+        <h5>✅ Router Tersimpan:</h5>
+        <ul class="list-group mb-3">
+          <li class="list-group-item"><strong>Nama:</strong> <span id="info-name"></span></li>
+          <li class="list-group-item"><strong>IP:</strong> <span id="info-ip"></span></li>
+          <li class="list-group-item"><strong>Username:</strong> <span id="info-username"></span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+<script>
+  const form = document.getElementById('form-router');
+  const routerForm = document.getElementById('router-form');
+  const routerInfo = document.getElementById('router-info');
+  const routerLoading = document.getElementById('router-loading');
+  const editBtn = document.getElementById('edit-router-btn');
+
+  // Fungsi sembunyikan semua
+  function hideAll() {
+    routerForm.style.display = 'none';
+    routerInfo.style.display = 'none';
+    routerLoading.style.display = 'none';
+  }
+
+  // Fungsi tampilkan loading
+  function showLoading() {
+    hideAll();
+    routerLoading.style.display = 'block';
+  }
+
+  // Fungsi tampilkan data
+  function showRouterInfo(data) {
+    document.getElementById('info-name').textContent = data.name;
+    document.getElementById('info-ip').textContent = data.ip;
+    document.getElementById('info-username').textContent = data.username;
+  }
+
+  // Fungsi ambil data awal dari Firebase
+  function loadRouter() {
+    showLoading();
+    firebase.database().ref('routers/default').once('value')
+      .then(snapshot => {
+        const data = snapshot.val();
+        hideAll();
+
+        if (data && data.name && data.ip) {
+          routerInfo.style.display = 'block';
+          showRouterInfo(data);
+        } else {
+          routerForm.style.display = 'block';
+        }
+      })
+      .catch(err => {
+        console.error('Gagal ambil data router:', err);
+        hideAll();
+        routerForm.style.display = 'block';
+      });
+  }
+
+  // Jalankan saat halaman dibuka
+  window.addEventListener('DOMContentLoaded', loadRouter);
+
+  // Submit Form
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const data = {
+      name: form.name.value,
+      ip: form.ip.value,
+      username: form.username.value,
+      password: form.password.value
+    };
+
+    showLoading();
+
+    firebase.database().ref('routers/default').set(data)
+      .then(() => {
+        hideAll();
+        routerInfo.style.display = 'block';
+        showRouterInfo(data);
+      })
+      .catch(err => {
+        console.error('Gagal simpan data:', err);
+        hideAll();
+        routerForm.style.display = 'block';
+      });
+  });
+
+  // Tombol edit
+  editBtn.addEventListener('click', () => {
+    firebase.database().ref('routers/default').once('value').then(snapshot => {
+      const data = snapshot.val();
+      if (data) {
+        form.name.value = data.name;
+        form.ip.value = data.ip;
+        form.username.value = data.username;
+        form.password.value = data.password;
+
+        hideAll();
+        routerForm.style.display = 'block';
+      }
+    });
+  });
+</script>
+</div>
+<style>
+  .card-header i {
+    color: #0dcaf0;
+  }
+
+  .card {
+    border-radius: 1rem;
+    overflow: hidden;
+  }
+  #btn-show-form, #edit-router-btn {
+    border-radius: 50%;
+    padding: 0.25rem 0.55rem;
+    font-size: 1rem;
+  }
+</style>
+<!-- Bandwidth Settings -->
+<div class="col-md-6 mb-3">
+<div class="card mb-4 shadow-sm">
+<div class="card-header bg-dark text-light d-flex justify-content-between align-items-center">
+  <div>
+    <i class="bi bi-speedometer2 me-2"></i>Profil Bandwidth
+  </div>
+  <button class="btn btn-sm btn-outline-light" id="btn-show-form">
+    <i class="bi bi-plus-lg"></i>
+  </button>
+</div>
+<!-- Card Body -->
+<div class="card-body">
+  <!-- Loading -->
+  <div id="bw-loading" class="text-center my-4" style="display: none;">
+    <div class="spinner-border text-primary" role="status"></div>
+    <div>Loading...</div>
+  </div>
+
+  <!-- Form -->
+  <div id="bw-form" style="display:none;">
+    <form id="form-bandwidth">
+      <div class="mb-3">
+        <label class="form-label">Nama Profil</label>
+        <input type="text" class="form-control" id="name" required>
+      </div>
+      <div class="row">
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Download Rate</label>
+          <input type="text" class="form-control" id="rate_download" placeholder="2M" required>
+        </div>
+        <div class="col-md-6 mb-3">
+          <label class="form-label">Upload Rate</label>
+          <input type="text" class="form-control" id="rate_upload" placeholder="1M" required>
+        </div>
+      </div>
+      <button class="btn btn-primary" type="submit">
+        <i class="bi bi-plus-circle me-1"></i>Tambah Profil
+      </button>
+    </form>
+  </div>
+
+  <!-- List Bandwidth -->
+  <div id="bw-list" class="mt-0"></div>
+</div>
+</div>
+<script>
+  const formBW = document.getElementById('form-bandwidth');
+  const bwLoading = document.getElementById('bw-loading');
+  const bwForm = document.getElementById('bw-form');
+  const bwList = document.getElementById('bw-list');
+
+  // Simpan data ke Firebase
+  formBW.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const data = {
+      name: formBW.name.value,
+      rate_download: formBW.rate_download.value,
+      rate_upload: formBW.rate_upload.value
+    };
+
+    bwForm.style.display = 'none';
+    bwLoading.style.display = 'block';
+
+    firebase.database().ref('bandwidths').push(data)
+      .then(() => {
+        formBW.reset();
+        bwLoading.style.display = 'none';
+        bwForm.style.display = 'block';
+        loadBandwidths(); // Reload list
+      });
+  });
+
+  // Tampilkan data dari Firebase
+  function loadBandwidths() {
+    bwLoading.style.display = 'block';
+	bwForm.style.display = 'none';
+    bwList.innerHTML = '';
+
+    firebase.database().ref('bandwidths').once('value').then(snapshot => {
+      const items = snapshot.val();
+      bwLoading.style.display = 'none';
+
+      if (!items) {
+        bwList.innerHTML = '<div class="text-warning">Belum ada profil bandwidth tersimpan.</div>';
+        return;
+      }
+
+      Object.entries(items).forEach(([id, item]) => {
+        const card = document.createElement('div');
+        card.className = 'card mb-2';
+        card.innerHTML = `
+          <div class="">
+				<h5>✅ Bandwidths Tersimpan:</h5>
+        <ul class="list-group mb-3">
+          <li class="list-group-item"><strong>Nama:</strong> <span>${item.name}</span></li>
+          <li class="list-group-item"><strong>Download:</strong> <span>${item.rate_download}</span></li>
+          <li class="list-group-item"><strong>Upload:</strong> <span>${item.rate_upload}</span></li>
+        </ul>
+          </div>
+        `;
+        bwList.appendChild(card);
+      });
+    });
+  }
+
+  const btnShowForm = document.getElementById('btn-show-form');
+
+  // Tampilkan form dan sembunyikan list
+  btnShowForm.addEventListener('click', () => {
+    bwForm.style.display = 'block';
+    bwList.style.display = 'none';
+    formBW.scrollIntoView({ behavior: 'smooth' });
+  });
+
+  // Setelah submit, tampilkan list lagi
+  formBW.addEventListener('submit', function (e) {
+    e.preventDefault();
+    const data = {
+      name: formBW.name.value,
+      rate_download: formBW.rate_download.value,
+      rate_upload: formBW.rate_upload.value
+    };
+
+    bwLoading.style.display = 'block';
+    bwForm.style.display = 'none';
+
+    firebase.database().ref('bandwidths').push(data)
+      .then(() => {
+        formBW.reset();
+        bwLoading.style.display = 'none';
+        bwList.style.display = 'block'; // Tampilkan list lagi
+        loadBandwidths();
+      });
+  });
+  // Load awal
+  loadBandwidths();
+</script>
+</div>
+</div>
+</div>
+<div class="card bg-dark text-light">
+  <div class="card-header d-flex justify-content-between align-items-center mb-3">
+  <h5 class="mb-0">Daftar Paket Hotspot</h5>
+  <button id="btnTambahPaket" class="btn btn-outline-light btn-sm">
+    <i class="bi bi-plus-circle me-1"></i>Tambah Paket
+  </button>
+</div>
+<div id="listPaketHotspot" class="card-body"></div>
+  <div class="card-body">
+    <form id="formPaketHotspot">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Nama Paket</label>
+          <input type="text" class="form-control" name="nama" required>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Jenis Paket</label>
+          <select class="form-select" name="jenis" required>
+            <option value="">-- Pilih --</option>
+            <option value="time">Time-Based</option>
+            <option value="quota">Quota-Based</option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Bandwidth</label>
+          <select class="form-select" name="bandwidth_id" required>
+            <!-- Diisi dari backend / database -->
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Harga Paket (Rp)</label>
+          <input type="number" class="form-control" name="harga" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Masa Aktif (hari)</label>
+          <input type="number" class="form-control" name="masa_aktif" required>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Time Limit (opsional)</label>
+          <input type="text" class="form-control" name="time_limit" placeholder="Contoh: 1h, 2d">
+        </div>
+        <div class="col-md-4">
+          <label class="form-label">Quota Limit (opsional)</label>
+          <input type="text" class="form-control" name="quota_limit" placeholder="Contoh: 500MB, 2GB">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Shared Users</label>
+          <input type="number" class="form-control" name="shared_users" value="1">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Session Timeout</label>
+          <input type="text" class="form-control" name="session_timeout" placeholder="Contoh: 1h, 30m">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Script Scheduler (otomatis)</label>
+          <textarea class="form-control" name="script" rows="4" readonly>
+:put (",ntf,3000,12h,3000,,Enable,"); 
+{:local date [ /system clock get date ];
+:local year [ :pick $date 7 11 ];
+:local month [ :pick $date 0 3 ];
+:local comment [ /ip hotspot user get [/ip hotspot user find where name="$user"] comment];
+:local ucode [:pic $comment 0 2]; 
+:if ($ucode = "vc" or $ucode = "up" or $comment = "") do={
+/sys sch add name="$user" disable=no start-date=$date interval="1d"; 
+:delay 2s; 
+:local exp [ /sys sch get [ /sys sch find where name="$user" ] next-run]; 
+:local getxp [len $exp]; 
+:if ($getxp = 15) do={
+:local d [:pic $exp 0 6];
+:local t [:pic $exp 7 16];
+:local s ("/");
+:local exp ("$d$s$year $t"); 
+/ip hotspot user set comment=$exp [find where name="$user"];
+}; 
+:if ($getxp = 8) do={
+/ip hotspot user set comment="$date $exp" [find where name="$user"];
+}; 
+:if ($getxp > 15) do={
+/ip hotspot user set comment=$exp [find where name="$user"];
+}; 
+/sys sch remove [find where name="$user"]; 
+[:local mac $"mac-address"; /ip hotspot user set mac-address=$mac [find where name=$user]]
+}}
+          </textarea>
+        </div>
+        <div class="col-12 mt-3 text-end">
+          <button type="submit" class="btn btn-success">Simpan Paket</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+<!-- SCRIPT JS -->
+<script>
+const formPaket = document.getElementById("formPaketHotspot");
+const formContainer = formPaket.closest(".card-body"); // <- ganti ini
+const listContainer = document.getElementById("listPaketHotspot");
+const btnTambah = document.getElementById("btnTambahPaket");
+const bandwidthSelect = formPaket.querySelector('select[name="bandwidth_id"]'); // <- dan ini
+
+// Tampilkan form
+btnTambah.addEventListener("click", () => {
+  formContainer.style.display = "block";
+  listContainer.parentElement.querySelector("h5").textContent = "Tambah Paket Hotspot";
+  listContainer.style.display = "none";
+});
+
+// Muat bandwidth dari Firebase
+firebase.database().ref("bandwidths").once("value").then(snapshot => {
+  snapshot.forEach(child => {
+    const val = child.val();
+    const opt = document.createElement("option");
+    opt.value = child.key;
+    opt.textContent = `${val.name} (${val.rate_download}/${val.rate_upload})`;
+    bandwidthSelect.appendChild(opt);
+  });
+});
+
+// Ambil dan tampilkan daftar paket
+function loadPaketList() {
+  firebase.database().ref("pakets").once("value").then(snapshot => {
+    listContainer.innerHTML = "";
+    if (!snapshot.exists()) {
+      listContainer.innerHTML = `<li class="list-group-item">Belum ada paket.</li>`;
+      return;
+    }
+    snapshot.forEach(child => {
+      const p = child.val();
+      const li = document.createElement("li");
+      li.className = "list-group-item d-flex justify-content-between align-items-center";
+      li.innerHTML = `
+        <div>
+          <strong>${p.nama}</strong> <span class="badge bg-info">${p.jenis}</span><br>
+          Bandwidth: ${p.bandwidth_id} | Harga: Rp${p.harga}
+        </div>
+        <span class="text-muted">${p.masa_aktif} hari</span>
+      `;
+      listContainer.appendChild(li);
+    });
+  });
+}
+
+// Simpan paket
+formPaket.addEventListener("submit", function (e) {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(formPaket).entries());
+
+  const id = Date.now();
+  firebase.database().ref("pakets/" + id).set(data).then(() => {
+    alert("Paket berhasil disimpan!");
+    formPaket.reset(); // <- ganti juga ini
+    formContainer.style.display = "none";
+    listContainer.style.display = "block";
+    listContainer.parentElement.querySelector("h5").textContent = "Daftar Paket Hotspot";
+    loadPaketList();
+  }).catch(err => alert("Gagal simpan paket."));
+});
+
+// Inisialisasi
+formContainer.style.display = "none";
+listContainer.style.display = "block";
+loadPaketList();
+</script>

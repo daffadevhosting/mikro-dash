@@ -1,0 +1,109 @@
+<!-- Modal Topup -->
+<div class="modal fade" id="modalTopup" tabindex="-1" aria-labelledby="topupModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content text-dark">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title" id="topupModalLabel"><i class="bi bi-wallet2 me-2"></i>Topup User WiFi</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formTopup">
+          <div class="mb-3">
+            <label class="form-label">Pilih Username</label>
+            <select class="form-select" name="username" required>
+              <!-- Diisi dari JS / Firebase -->
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Pilih Paket</label>
+            <select class="form-select" name="paket_id" required>
+              <!-- Diisi dari Firebase -->
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Metode Pembayaran</label>
+            <select class="form-select" name="metode">
+              <option value="manual">Manual</option>
+              <option value="qris">QRIS</option>
+            </select>
+          </div>
+          <div class="text-end">
+            <button class="btn btn-primary" type="submit">
+              <i class="bi bi-check-circle me-1"></i>Konfirmasi Topup
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const formTopup = document.getElementById('formTopup');
+const usernameSelect = formTopup.querySelector('select[name="username"]');
+const paketSelect = formTopup.querySelector('select[name="paket_id"]');
+
+// Load username dari Firebase
+function loadUsernames() {
+  usernameSelect.innerHTML = '<option value="">Loading...</option>';
+  firebase.database().ref('custemers/hotspot/').once('value').then(snapshot => {
+    const users = snapshot.val();
+    usernameSelect.innerHTML = '';
+    if (users) {
+      Object.entries(users).forEach(([id, user]) => {
+        const opt = document.createElement('option');
+        opt.value = user.username || id;
+        opt.textContent = user.username || id;
+        usernameSelect.appendChild(opt);
+      });
+    } else {
+      usernameSelect.innerHTML = '<option value="">Tidak ada user</option>';
+    }
+  });
+}
+
+// Load paket dari Firebase
+function loadPaketOptions() {
+  paketSelect.innerHTML = '<option value="">Loading...</option>';
+  firebase.database().ref('pakets').once('value').then(snapshot => {
+    const pakets = snapshot.val();
+    paketSelect.innerHTML = '';
+    if (pakets) {
+      Object.entries(pakets).forEach(([id, p]) => {
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = `${p.nama} - Rp${p.harga}`;
+        paketSelect.appendChild(opt);
+      });
+    } else {
+      paketSelect.innerHTML = '<option value="">Tidak ada paket</option>';
+    }
+  });
+}
+
+// Submit topup
+formTopup.addEventListener('submit', function (e) {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(this).entries());
+
+  fetch('{{site.localurl}}/php/topup_user.php', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(data)
+  }).then(res => res.json())
+    .then(res => {
+      if (res.success) {
+        alert("Topup berhasil!");
+        bootstrap.Modal.getInstance(document.getElementById('modalTopup')).hide();
+        formTopup.reset();
+      } else {
+        alert("Topup gagal: " + res.message);
+      }
+    });
+});
+
+// Saat modal terbuka, isi data
+document.getElementById('modalTopup').addEventListener('show.bs.modal', () => {
+  loadUsernames();
+  loadPaketOptions();
+});
+</script>

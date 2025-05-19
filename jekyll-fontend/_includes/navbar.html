@@ -1,0 +1,16 @@
+
+			<div class="container-fluid d-flex justify-content-between align-items-center">
+			  <div class="d-flex align-items-center gap-2">
+				<img src="/assets/images/logo.png" class="rounded-circle" width="32" height="32" alt="User">
+			  </div>
+			<h4>{{ page.title | default: "Dashboard" }}</h4>
+			<div class="d-flex gap-2">
+			<button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalTopup">
+			  <i class="bi bi-bag-plus"></i> Topup User
+			</button>
+          <button onclick="logout()" class="btn btn-outline-danger btn-sm d-flex align-items-center">
+            <i class="bi bi-box-arrow-right"></i>
+          </button>
+		  </div>
+		  </div>
+			<hr />

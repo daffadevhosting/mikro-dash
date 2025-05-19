@@ -1,0 +1,36 @@
+<div class="card text-light bg-dark mb-4" style="overflow:hidden;">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-clipboard-data me-2"></i>Log Sistem MikroTik</span>
+    <button class="btn btn-sm btn-outline-light" onclick="loadLogs()">Refresh</button>
+  </div>
+  <div class="card-body p-2" style="max-height: 120px; overflow-y: auto;">
+    <ul class="list-group list-group-flush" id="logList"></ul>
+  </div>
+</div>
+<script>
+function loadLogs() {
+  fetch("{{site.localurl}}/php/get_logs.php")
+    .then(res => res.json())
+    .then(data => {
+      const logList = document.getElementById("logList");
+      logList.innerHTML = "";
+
+      if (data.logs) {
+        data.logs.slice(0, 50).forEach(log => {
+          const item = document.createElement("li");
+          item.className = "list-group-item bg-dark text-light border-secondary small";
+          item.innerHTML = `<strong>[${log.time}]</strong> <em>${log.topic || 'unknown'}</em>: ${log.message}`;
+          logList.appendChild(item);
+        });
+      } else {
+        logList.innerHTML = `<li class="list-group-item bg-dark text-warning border-secondary">Tidak ada log.</li>`;
+      }
+    })
+    .catch(err => {
+      document.getElementById("logList").innerHTML = `<li class="list-group-item bg-dark text-danger border-secondary">Gagal memuat log.</li>`;
+    });
+}
+
+// auto muat saat pertama kali
+loadLogs();
+</script>

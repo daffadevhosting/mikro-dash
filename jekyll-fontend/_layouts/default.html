@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="{{ site.lang | default: page.lang | default: 'id | ID' }}">
+
+  {% include head.html %}
+
+  <body>
+
+    <div class="d-flex">
+  {% include sidebar.html %}
+
+		  <!-- Main Content -->
+	<div class="flex-grow-1 main-content py-3" id="main-content">
+	  <div class="container-fluid">
+			{% include navbar.html %}
+			{{ content }}
+			{% include navMobile.html %}
+	  </div>
+    </div>
+	
+			{% include topupModal.html %}
+			{% include testKoneksi.html %}
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const currentPath = window.location.pathname;
+    const navLinks = document.querySelectorAll("#sidebarNav .nav-link");
+
+    navLinks.forEach(link => {
+      if (link.getAttribute("href") === currentPath) {
+        link.classList.add("active");
+      }
+    });
+  });
+</script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const currentPath = window.location.pathname;
+
+    // Sidebar
+    document.querySelectorAll("#sidebarNav .nav-link").forEach(link => {
+      if (link.getAttribute("href") === currentPath) {
+        link.classList.add("active");
+      }
+    });
+
+    // Bottom navbar
+    document.querySelectorAll("#bottomNavbar .nav-link").forEach(link => {
+      if (link.getAttribute("href") === currentPath) {
+        link.classList.add("active");
+      }
+    });
+  });
+</script>
+{% if page.url == "/" %}
+{% else %}
+<script type="text/javascript" src="{{ '/assets/js/auth.js' | relative_url }}"></script>
+{% endif %}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+
+</html>

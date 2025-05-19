@@ -1,0 +1,285 @@
+---
+layout: null
+title: Wellcome
+permalink: /
+---
+
+<!DOCTYPE html>
+<html lang="{{ site.lang | default: page.lang | default: 'id | ID' }}">
+<head>
+  <meta charset="UTF-8" />
+  <title>{% if page.title %}{{ page.title | escape }}{% else %}{{ site.title | escape }}{% endif %}</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body { margin: 0; overflow: hidden; background: #000; color: white; font-family: sans-serif; }
+    #infoBox {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      padding: 10px 15px;
+      border-radius: 8px;
+    }
+	#loginBox {
+    margin: 20px;
+    display: block;
+    width: fit-content;
+	}
+	.colGardient {
+		background:  linear-gradient(to right, #8360c3, #2ebf91);
+	}
+	.row
+		{
+		--bs-gutter-x: 0rem !important;
+	}
+  </style>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.155.0/build/three.module.js"
+,
+      "OrbitControls": "https://cdn.jsdelivr.net/npm/three@0.150.0/examples/jsm/controls/OrbitControls.js"
+    }
+  }
+  </script>
+</head>
+<body>
+
+<div class="row vw-100 vh-100">
+<div class="col-md-4 colGardient p-0">
+<div class="container">
+	
+    <div class="text-center my-4 mx-auto">
+      <h2><strong>Total User</strong></h2> <h1><span id="totalUsers">0</span></h1><br>
+    </div>
+	
+<div class="container mx-1">
+	<div class="card bg-dark text-light shadow rounded-4 border-0 mb-4">
+  <div class="card-body">
+    <div class="d-flex align-items-center mb-3">
+      <i class="bi bi-hdd-network-fill fs-1 text-info me-3"></i>
+      <div>
+        <h5 class="card-title mb-0">Mikrotik Device</h5>
+      <strong>User Online:</strong> <span id="onlineUsers">0</span><br>
+        <small class="text-info">RB491-2nd | Hotspot Controller</small>
+      </div>
+<div id="loginBox" style="position: absolute;right: 0;">
+	<button id="loginPage" class="btn btn-outline-primary btn-sm d-flex align-items-center">
+	  <i class="bi bi-box-arrow-in-right"></i>
+	</button>
+	<script>
+	document.getElementById('loginPage').onclick = function() {
+		  window.location.href = "/login";
+	};
+	</script>
+</div>
+    </div>
+    <ul class="list-group list-group-flush bg-dark text-light">
+      <li class="list-group-item bg-dark text-light d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-cpu-fill me-2 text-warning"></i> Model</span>
+        <span id="deviceModel">hapLite RB491-2nd</span>
+      </li>
+      <li class="list-group-item bg-dark text-light d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-router-fill me-2 text-primary"></i> IP Address</span>
+        <span id="deviceIP">192.168.88.1</span>
+      </li>
+      <li class="list-group-item bg-dark text-light d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-wifi me-2 text-success"></i> Interface</span>
+        <span id="deviceInterface">ether1</span>
+      </li>
+      <li class="list-group-item bg-dark text-light d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-clock-history me-2 text-secondary"></i> Uptime</span>
+        <span id="deviceUptime">12d 3h 21m</span>
+      </li>
+      <li class="list-group-item bg-dark text-light d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-cpu me-2 text-danger"></i> CPU Load</span>
+        <span id="deviceCPU">23%</span>
+      </li>
+      <li class="list-group-item bg-dark text-light d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-memory me-2 text-info"></i> RAM Usage</span>
+        <span id="deviceRAM">128MB</span>
+      </li>
+    </ul>
+  </div>
+</div>
+</div>
+
+</div>
+</div>
+<div class="col-md-8 p-0 shadow-lg position-relative">
+  <div id="threeContainer" style="width: 100%; height: 100%;"></div>
+
+  <div id="infoBox"></div>
+
+  <div id="tooltip" style="position: absolute; background: rgba(0,0,0,0.7); color: white; padding: 5px; border-radius: 5px; display: none; pointer-events: none; z-index: 1000;"></div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'OrbitControls';
+
+    const container = document.getElementById('threeContainer');
+    const tooltip = document.getElementById('tooltip');
+    const totalUsers = document.getElementById('totalUsers');
+    const onlineUsers = document.getElementById('onlineUsers');
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.25;
+    controls.screenSpacePanning = false;
+    controls.maxPolarAngle = Math.PI / 2;
+
+    const raycaster = new THREE.Raycaster();
+    const mouse = new THREE.Vector2();
+
+    const geometry = new THREE.SphereGeometry(0.15, 12, 12);
+    const normalMat = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+
+const nodes = [];
+let nodeCount = 75;
+let onlineCount = 0;
+
+function generateNodes() {
+  nodes.forEach(node => scene.remove(node));
+  nodes.length = 0;
+
+  const nodeCount = Math.floor(Math.random() * 51) + 50;
+  const onlineRatio = 0.3;
+  const onlineTarget = Math.floor(nodeCount * onlineRatio);
+
+  const statuses = Array(nodeCount).fill('Offline');
+  for (let i = 0; i < onlineTarget; i++) {
+    statuses[i] = 'Online';
+  }
+  for (let i = statuses.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [statuses[i], statuses[j]] = [statuses[j], statuses[i]];
+  }
+
+
+  for (let i = 0; i < nodeCount; i++) {
+    const isOnline = statuses[i] === 'Online';
+    const color = isOnline ? 0x00ff00 : 0xff0000;
+    if (isOnline) onlineCount++;
+
+    const node = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color }));
+    node.position.set(
+      Math.random() * 10 - 5,
+      Math.random() * 10 - 5,
+      Math.random() * 10 - 5
+    );
+    node.userData = {
+      name: `Hotspot #${i + 1}`,
+      ip: `192.168.88.${i + 15}`,
+      status: isOnline ? 'Online' : 'Offline',
+      color
+    };
+    scene.add(node);
+    nodes.push(node);
+  }
+
+  console.log(`Generated ${nodeCount} nodes, ${onlineCount} online`);
+}
+
+generateNodes();
+
+    // Garis antar node
+    const lineMat = new THREE.LineBasicMaterial({ color: 0x4444ff, transparent: true, opacity: 0.4 });
+    for (let i = 0; i < nodes.length; i++) {
+      for (let j = i + 1; j < nodes.length; j++) {
+        if (nodes[i].position.distanceTo(nodes[j].position) < 5) {
+          const geo = new THREE.BufferGeometry().setFromPoints([
+            nodes[i].position, nodes[j].position
+          ]);
+          scene.add(new THREE.Line(geo, lineMat));
+        }
+      }
+    }
+
+    camera.position.z = 12;
+    totalUsers.textContent = nodeCount;
+    onlineUsers.textContent = onlineCount;
+
+    let lastHovered = null;
+
+    function onMouseMove(event) {
+      const rect = container.getBoundingClientRect();
+
+      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(nodes);
+
+      if (intersects.length > 0) {
+        const object = intersects[0].object;
+        tooltip.style.display = 'block';
+        tooltip.innerHTML = `User: ${object.userData.name}<br>Status: ${object.userData.status}`;
+        tooltip.style.left = `${event.clientX - rect.left + 10}px`;
+        tooltip.style.top = `${event.clientY - rect.top + 10}px`;
+      } else {
+        tooltip.style.display = 'none';
+      }
+    }
+
+    function onClick() {
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(nodes);
+      if (intersects.length > 0) {
+        const node = intersects[0].object;
+        const infoBox = document.getElementById('infoBox');
+        infoBox.innerHTML = `
+          <div>
+            <strong>${node.userData.name}</strong><br>
+            IP: ${node.userData.ip}<br>
+            Status: ${node.userData.status}<br><br>
+            <strong>Total User:</strong> ${nodeCount}<br>
+            <strong>Online:</strong> ${onlineCount}
+          </div>
+        `;
+        document.getElementById('loginPage').onclick = () => {
+          window.location.href = "/login";
+        };
+      }
+    }
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('click', onClick);
+
+    function animate() {
+      requestAnimationFrame(animate);
+
+      raycaster.setFromCamera(mouse, camera);
+      const intersects = raycaster.intersectObjects(nodes);
+
+      if (intersects.length > 0) {
+        const hovered = intersects[0].object;
+        if (lastHovered && lastHovered !== hovered) {
+          lastHovered.material.color.setHex(lastHovered.userData.color);
+        }
+
+        hovered.material.color.setHex(hovered.userData.status === 'Online' ? 0xffff00 : 0xff9900);
+        lastHovered = hovered;
+      } else {
+        if (lastHovered) {
+          lastHovered.material.color.setHex(lastHovered.userData.color);
+          lastHovered = null;
+        }
+      }
+
+      scene.rotation.y += 0.0015;
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

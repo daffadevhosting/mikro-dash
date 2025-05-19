@@ -1,0 +1,13 @@
+const firebaseConfig = {
+  apiKey: "{{ site.api_key }}",
+  authDomain: "{{ site.auth_domain }}",
+  databaseURL: "{{ site.database_url }}",
+  projectId: "{{ site.project_id }}",
+  storageBucket: "{{ site.storage_bucket }}",
+  messagingSenderId: "{{ site.sender_id }}",
+  appId: "{{ site.app_id }}",
+  measurementId: "{{ site.measure_id }}"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();

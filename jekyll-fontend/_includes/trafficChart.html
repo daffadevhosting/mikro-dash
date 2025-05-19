@@ -1,0 +1,90 @@
+<div class="card mb-4 text-light bg-dark">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-graph-up-arrow me-2"></i>Traffic Monitor</span>
+  </div>
+  <div class="card-body">
+    <canvas id="trafficChart" height="236"></canvas>
+  </div>
+</div>
+<script>
+const ctx = document.getElementById('trafficChart').getContext('2d');
+
+const gradientRx = ctx.createLinearGradient(0, 0, 0, 300);
+gradientRx.addColorStop(0, 'rgba(0, 255, 132, 0.5)');
+gradientRx.addColorStop(1, 'rgba(0, 255, 132, 0.05)');
+
+const gradientTx = ctx.createLinearGradient(0, 0, 0, 300);
+gradientTx.addColorStop(0, 'rgba(255, 99, 132, 0.5)');
+gradientTx.addColorStop(1, 'rgba(255, 99, 132, 0.05)');
+
+const trafficChart = new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: [],
+    datasets: [
+      {
+        label: 'RX (bps)',
+        data: [],
+        borderColor: 'rgb(0, 255, 132)',
+        backgroundColor: gradientRx,
+        fill: true,
+        tension: 0.4
+      },
+      {
+        label: 'TX (bps)',
+        data: [],
+        borderColor: 'rgb(255, 99, 132)',
+        backgroundColor: gradientTx,
+        fill: true,
+        tension: 0.4
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          callback: value => {
+            if (value > 1000000) return (value / 1000000).toFixed(1) + ' Mbps';
+            if (value > 1000) return (value / 1000).toFixed(1) + ' Kbps';
+            return value + ' bps';
+          }
+        }
+      }
+    },
+    plugins: {
+      legend: {
+        labels: {
+          color: 'white'
+        }
+      }
+    }
+  }
+});
+
+// Update data setiap 5 detik
+setInterval(() => {
+  fetch('{{site.localurl}}/php/get_traffic.php') // Endpoint PHP-mu
+    .then(res => res.json())
+    .then(data => {
+      const now = new Date().toLocaleTimeString();
+
+      // Limit ke 10 data point
+      if (trafficChart.data.labels.length >= 10) {
+        trafficChart.data.labels.shift();
+        trafficChart.data.datasets[0].data.shift();
+        trafficChart.data.datasets[1].data.shift();
+      }
+
+      trafficChart.data.labels.push(now);
+      trafficChart.data.datasets[0].data.push(data.rx); // dalam bps
+      trafficChart.data.datasets[1].data.push(data.tx);
+
+      trafficChart.update();
+    });
+}, 5000);
+</script>

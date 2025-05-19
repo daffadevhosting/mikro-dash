@@ -1,0 +1,82 @@
+<div class="card bg-dark text-light shadow rounded-4 border-0 mb-4" id="mikrotikCard">
+  <div class="card-body">
+    <div class="d-flex align-items-center mb-3">
+      <i class="bi bi-hdd-network-fill fs-1 text-info me-3"></i>
+      <div>
+        <h5 class="card-title mb-0">Mikrotik Device</h5>
+        <small class="text-info">Status koneksi real-time</small>
+      </div>
+    </div>
+
+    <div id="deviceInfo">
+      <ul class="list-group list-group-flush bg-dark text-light">
+        <li class="list-group-item bg-dark text-light d-flex justify-content-between">
+          <span><i class="bi bi-cpu-fill me-2 text-warning"></i> Model</span>
+          <span id="deviceModel">-</span>
+        </li>
+        <li class="list-group-item bg-dark text-light d-flex justify-content-between">
+          <span><i class="bi bi-router-fill me-2 text-primary"></i> IP Address</span>
+          <span id="deviceIP">-</span>
+        </li>
+        <li class="list-group-item bg-dark text-light d-flex justify-content-between">
+          <span><i class="bi bi-clock-history me-2 text-secondary"></i> Uptime</span>
+          <span id="deviceUptime">-</span>
+        </li>
+        <li class="list-group-item bg-dark text-light d-flex justify-content-between">
+          <span><i class="bi bi-cpu me-2 text-danger"></i> CPU Load</span>
+          <span id="deviceCPU">-</span>
+        </li>
+        <li class="list-group-item bg-dark text-light d-flex justify-content-between">
+          <span><i class="bi bi-memory me-2 text-info"></i> RAM</span>
+          <span id="deviceRAM">-</span>
+        </li>
+      </ul>
+    </div>
+
+    <div id="deviceLoading" class="text-center py-4 d-none">
+      <div class="emoji" style="font-size: 2rem;">🤖💤</div>
+      <div class="mt-2 text-warning">Menghubungi Mikrotik... sabar ya!</div>
+    </div>
+
+    <div id="deviceError" class="text-center py-4 d-none">
+      <div class="emoji" style="font-size: 2rem;">😵‍💫📡</div>
+      <div class="mt-2 text-danger">Ups! Tidak terhubung ke Mikrotik.</div>
+    </div>
+  </div>
+</div>
+<script>
+function loadDeviceInfo() {
+  const info = document.getElementById("deviceInfo");
+  const loading = document.getElementById("deviceLoading");
+  const error = document.getElementById("deviceError");
+
+  info.classList.add("d-none");
+  error.classList.add("d-none");
+  loading.classList.remove("d-none");
+
+  fetch("{{site.localurl}}/php/get_device_info.php")
+    .then(res => res.json())
+    .then(data => {
+      loading.classList.add("d-none");
+
+      if (data.error) {
+        error.classList.remove("d-none");
+      } else {
+        document.getElementById("deviceModel").textContent = data.model;
+        document.getElementById("deviceIP").textContent = data.ip;
+        document.getElementById("deviceUptime").textContent = data.uptime;
+        document.getElementById("deviceCPU").textContent = data.cpu_load + "%";
+        document.getElementById("deviceRAM").textContent = 
+          (parseInt(data.total_ram) / 1024 / 1024).toFixed(0) + " MB";
+
+        info.classList.remove("d-none");
+      }
+    })
+    .catch(() => {
+      loading.classList.add("d-none");
+      error.classList.remove("d-none");
+    });
+}
+
+loadDeviceInfo();
+</script>

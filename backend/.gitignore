@@ -1,0 +1,5 @@
+/auth/secret/firebase-adminsdk.json
+.env
+*.log
+/vendor
+composer.lock

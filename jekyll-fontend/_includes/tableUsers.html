@@ -1,0 +1,158 @@
+<div class="card text-light mb-0">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span>Recent Users</span>
+    <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#modalTambahUser"><i class="bi bi-person-plus"></i> 
+      Tambah Akun
+    </button>
+  </div>
+  <div class="table-responsive d-none d-md-block">
+    <table class="table table-dark table-hover table-striped mb-0">
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>IP</th>
+          <th>MAC</th>
+          <th>Profile</th>
+          <th>Status</th>
+          <th>Uptime</th>
+        </tr>
+      </thead>
+      <tbody id="userTableBodyDesktop">
+        <tr><td colspan="6">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="card-footer d-flex justify-content-between align-items-center d-none d-md-block">
+    <button class="btn btn-outline-light btn-sm" id="prevPage">Previous</button>
+    <span id="paginationInfo" class="text-light"></span>
+    <button class="btn btn-outline-light btn-sm" id="nextPage">Next</button>
+  </div>
+
+  <!-- Card list on mobile -->
+  <div class="d-block d-md-none p-2" id="userCardListMobile"></div>
+</div>
+
+<script>
+  function loadUsers() {
+    fetch("{{site.localurl}}/php/get_all_users.php")
+      .then(res => res.json())
+      .then(data => {
+        const desktopBody = document.getElementById("userTableBodyDesktop");
+        const mobileList = document.getElementById("userCardListMobile");
+
+        desktopBody.innerHTML = "";
+        mobileList.innerHTML = "";
+
+        data.data.forEach(user => {
+          // Desktop row
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${user.username}</td>
+            <td>${user.address}</td>
+            <td>${user.mac || '-'}</td>
+            <td>${user.profile || '-'}</td>
+            <td>${user.status === 'online'
+              ? '<span class="badge bg-success">Online</span>'
+              : '<span class="badge bg-secondary">Offline</span>'}</td>
+            <td>${user.uptime}</td>
+          `;
+          desktopBody.appendChild(tr);
+
+          // Mobile card
+          const card = document.createElement("div");
+          card.className = "card bg-dark text-light mb-2 shadow-sm";
+          card.innerHTML = `
+            <div class="card-body p-2">
+              <h6 class="card-title mb-1 d-flex justify-content-between align-items-center">${user.username} 
+                ${user.status === 'online'
+                  ? '<span class="badge bg-success ms-2 float-right">Online</span>'
+                  : '<span class="badge bg-secondary ms-2 float-right">Offline</span>'}
+              </h6>
+              <small class="d-block"><strong>IP:</strong> ${user.address}</small>
+              <small class="d-block"><strong>MAC:</strong> ${user.mac || '-'}</small>
+              <small class="d-block"><strong>Profile:</strong> ${user.profile || '-'}</small>
+              <small class="d-block"><strong>Uptime:</strong> ${user.uptime}</small>
+            </div>
+          `;
+          mobileList.appendChild(card);
+        });
+      });
+  }
+
+  setInterval(loadUsers, 5000);
+  loadUsers();
+</script>
+
+<!-- Modal Tambah User -->
+<div class="modal fade" id="modalTambahUser" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content bg-dark text-light">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-person-plus me-2"></i>Tambah User Hotspot</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="formTambahUser">
+          <div class="mb-3">
+            <label class="form-label">Username</label>
+            <input type="text" name="username" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Password</label>
+            <input type="text" name="password" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Pilih Profile</label>
+            <select name="profile" class="form-select" required id="profile-select">
+              <option value="">-- Pilih Profil --</option>
+              <!-- Options dimuat dari Firebase -->
+            </select>
+          </div>
+          <div class="text-end">
+            <button type="submit" class="btn btn-success">
+              <i class="bi bi-check-circle me-1"></i> Tambah User
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+<script>
+  const profileSelect = document.getElementById('profile-select');
+
+  // Load profil dari Firebase
+  firebase.database().ref('bandwidths').once('value').then(snapshot => {
+    snapshot.forEach(child => {
+      const data = child.val();
+      const option = document.createElement('option');
+      option.value = data.name;
+      option.textContent = data.name;
+      profileSelect.appendChild(option);
+    });
+  });
+
+  // Submit form user
+  document.getElementById('formTambahUser').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(this).entries());
+
+    fetch('{{site.localurl}}/php/add_user.php', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(data)
+    }).then(res => res.json())
+      .then(res => {
+        if (res.success) {
+          alert("User berhasil ditambahkan!");
+          const modal = bootstrap.Modal.getInstance(document.getElementById('modalTambahUser'));
+          modal.hide();
+          this.reset();
+        } else {
+          alert("Gagal: " + res.message);
+        }
+      }).catch(err => {
+        alert("Terjadi kesalahan koneksi.");
+      });
+  });
+</script>
+</div>

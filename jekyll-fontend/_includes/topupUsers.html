@@ -1,0 +1,139 @@
+<div class="modal fade" id="topupModal" tabindex="-1" aria-labelledby="topupModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="topupForm">
+        <div class="modal-header">
+          <h5 class="modal-title" id="topupModalLabel">Topup Akun WiFi</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body">
+          <!-- Pilih Pelanggan -->
+<!-- Pilih Pelanggan -->
+<div class="mb-3">
+  <label for="customerSelect" class="form-label">Pilih Pelanggan</label>
+  <select id="customerSelect" class="form-select" required>
+    <option value="daffa">Daffa Aditya</option>
+    <option value="lia456">Lia Pratama</option>
+  </select>
+</div>
+
+          <!-- Pilih Paket -->
+          <div class="mb-3">
+            <label for="plan" class="form-label">Pilih Paket WiFi</label>
+            <select id="plan" class="form-select" required></select>
+          </div>
+
+          <!-- Pilih Router -->
+          <div class="mb-3">
+            <label for="router" class="form-label">Pilih Router</label>
+            <select id="router" class="form-select" required></select>
+          </div>
+
+          <!-- Metode -->
+          <div class="mb-3">
+            <label for="method" class="form-label">Metode</label>
+            <select id="method" class="form-select" required>
+              <option value="admin">Admin</option>
+              <option value="voucher">Voucher</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">Topup Sekarang</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBsWW-G3USjSI4NXP-6wjifcgYlRq5_O0s",
+  authDomain: "whatsgo-id.firebaseapp.com",
+  databaseURL: "https://whatsgo-id.firebaseio.com",
+  projectId: "whatsgo-id",
+  storageBucket: "whatsgo-id.appspot.com",
+  messagingSenderId: "785900266338",
+  appId: "1:785900266338:web:414e9b8792ec4737f4c23b"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+// Load dropdown data
+function loadDropdown(path, selectId, labelField) {
+  const dbRef = ref(db, path);
+  const select = document.getElementById(selectId);
+  onValue(dbRef, (snapshot) => {
+    select.innerHTML = "";
+    const data = snapshot.val();
+    for (const id in data) {
+      const option = document.createElement("option");
+      option.value = id;
+      option.textContent = data[id][labelField];
+      option.dataset.json = JSON.stringify(data[id]);
+      select.appendChild(option);
+    }
+  });
+}
+
+loadDropdown("customers", "customerSelect", "username");
+loadDropdown("plans", "plan", "name_plan");
+loadDropdown("routers", "router", "name");
+
+// Submit form
+document.getElementById("topupForm").addEventListener("submit", async function (e) {
+  e.preventDefault();
+
+  const selectedCustomerId = document.getElementById("customerSelect").value;
+  const selectedUsername = document.getElementById("username").value;
+  const selectedPlanId = document.getElementById("plan").value;
+  const selectedRouterId = document.getElementById("router").value;
+  const selectedMethod = document.getElementById("method").value;
+
+  const dataToSend = {
+    customer_id: selectedCustomerId,
+    username: selectedUsername,
+    password: "1234",
+    profile: "Paket 1jam",
+    method: selectedMethod,
+    plan_id: selectedPlanId,
+    type: "Hotspot",
+    router: {
+      ip_address: "30.3.30.1",
+      username: "admin",
+      password: "qaz@123"
+    }
+  };
+
+  try {
+    const response = await fetch('{{site.localurl}}/php/topup.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(dataToSend)
+    });
+
+    // Pastikan respon berhasil
+    if (!response.ok) {
+      throw new Error('Failed to fetch');
+    }
+
+    const result = await response.json(); // Ambil hasil JSON
+    console.log(result); // Tampilkan hasil dari server
+
+    // Lakukan aksi lain jika topup berhasil
+    alert('Topup berhasil!');
+
+  } catch (error) {
+    console.error('Error:', error);
+    alert('Ada masalah dengan koneksi atau server.');
+  }
+});
+
+</script>

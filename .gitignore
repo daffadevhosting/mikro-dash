@@ -1,0 +1,10 @@
+vendor/
+auth/secret/firebase-adminsdk.json
+.env
+*.log
+/build
+_site
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

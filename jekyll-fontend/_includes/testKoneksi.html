@@ -1,0 +1,36 @@
+<div class="modal fade" id="modalKoneksi" tabindex="-1" aria-labelledby="modalKoneksiLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0">
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title" id="modalKoneksiLabel"><i class="bi bi-router-fill me-2"></i>Status Koneksi</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center" id="hasilKoneksi">
+        <div class="spinner-border text-success" role="status"></div>
+        <p class="mt-3">Menghubungkan ke router...</p>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+document.getElementById('modalKoneksi').addEventListener('show.bs.modal', function () {
+  const hasil = document.getElementById('hasilKoneksi');
+  hasil.innerHTML = `
+    <div class="spinner-border text-success" role="status"></div>
+    <p class="mt-3">Menghubungkan ke router...</p>
+  `;
+
+  fetch('{{site.localurl}}/api/mikrotik.php')
+    .then(res => res.text())
+    .then(html => {
+      // Ekstrak bagian <div class="alert ..."> dari html mikrotik.php
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const alert = doc.querySelector('.alert');
+      hasil.innerHTML = alert ? alert.outerHTML : '<div class="alert alert-danger">Gagal parsing hasil</div>';
+    })
+    .catch(() => {
+      hasil.innerHTML = '<div class="alert alert-danger">Gagal menghubungi router.</div>';
+    });
+});
+</script>
