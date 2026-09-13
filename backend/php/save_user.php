@@ -9,7 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 
 // Include lib dan koneksi ke Firebase
 require_once __DIR__ . '/../vendor/autoload.php';
-require_once __DIR__ . '/../vendor/PEAR2/Autoload.php';
+require_once __DIR__ . '/../PEAR2/Autoload.php';
 
 use PEAR2\Net\RouterOS;
 use Kreait\Firebase\Factory;
@@ -22,7 +22,7 @@ $firebaseUri = getenv('FIREBASE_DB');
 
 // Init Firebase
 $factory = (new Factory)
-    ->withServiceAccount(__DIR__ . '/../firebase/firebase-adminsdk.json')
+    ->withServiceAccount(__DIR__ . '/../auth/secret/firebase-adminsdk.json')
     ->withDatabaseUri($firebaseUri);
 
 $database = $factory->createDatabase();

@@ -1,0 +1,82 @@
+{
+  "rules": {
+    "mikrotik_logins": {
+      "$uid": {
+        ".read": "auth != null && $uid === auth.uid",
+        "$routerId": {
+          ".read": "auth != null && $uid === auth.uid && data.child('owner').val() === auth.uid",
+          ".write": "auth != null && $uid === auth.uid && ((!data.exists() && newData.child('owner').val() === auth.uid) || (data.exists() && data.child('owner').val() === auth.uid))"
+        }
+      }
+    },
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "routers": {
+      "default": {
+        ".read": "auth != null",
+        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
+      }
+    },
+    "bandwidths": {
+      ".read": "auth != null",
+      "$bandwidthId": {
+        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
+      }
+    },
+    "pakets": {
+      ".read": "auth != null",
+      "$paketId": {
+        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
+      }
+    },
+    "package_metadata": {
+      ".read": "auth != null",
+      "$profileName": {
+        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
+      }
+    },
+    "custemers": {
+      "hotspot": {
+        ".read": "auth != null",
+        "$username": {
+          ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
+        }
+      }
+    },
+    "hotspot_plans": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'"
+      }
+    },
+    "hotspot_users": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'"
+      }
+    },
+    "user_profiles": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'"
+      }
+    },
+    "topup_logs": {
+      "$uid": {
+        ".read": "auth != null",
+        ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'"
+      }
+    },
+    "transactions": {
+      ".indexOn": ["date"],
+      ".read": "auth != null",
+      ".write": "root.child('users').child(auth.uid).child('role').val() === 'admin'"
+    },
+    ".read": false,
+    ".write": false
+  }
+}

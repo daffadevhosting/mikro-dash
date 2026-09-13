@@ -1,5 +1,5 @@
 <?php
-putenv('CURL_CA_BUNDLE=' . realpath('D:/hotspot-project/cacert.pem'));
+putenv('CURL_CA_BUNDLE=' . __DIR__ . '/../cacert.pem');
 error_reporting(E_ALL & ~E_DEPRECATED);
 
 ini_set('display_errors', 1);
@@ -18,7 +18,7 @@ function encodeEmailKey($email) {
     return str_replace('.', '_', $email);
 }
 
-$serviceAccountPath = realpath(__DIR__ . '/secret/adminsdk.json');
+$serviceAccountPath = realpath(__DIR__ . '/secret/firebase-adminsdk.json');
 if (!$serviceAccountPath) {
     die("Service account JSON tidak ditemukan!");
 }

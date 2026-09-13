@@ -9,7 +9,7 @@ ini_set('display_errors', 1);
 header('Content-Type: application/json');
 
 // Pastikan PEAR2 sudah bisa dipanggil
-require_once __DIR__ . '/../vendor/PEAR2/Autoload.php';
+require_once __DIR__ . '/../PEAR2/Autoload.php';
 use PEAR2\Net\RouterOS;
 
 // Ambil data dari POST JSON

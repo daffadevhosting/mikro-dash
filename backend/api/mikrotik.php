@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 require_once __DIR__ . '/../api/connect.php';
-require_once __DIR__ . '/../vendor/PEAR2/Autoload.php';
+require_once __DIR__ . '/../PEAR2/Autoload.php';
 
 use PEAR2\Net\RouterOS;
 

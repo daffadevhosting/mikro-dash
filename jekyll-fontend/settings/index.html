@@ -230,7 +230,7 @@ permalink: /settings
   const bwForm = document.getElementById('bw-form');
   const bwList = document.getElementById('bw-list');
 
-  // Simpan data ke Firebase
+  // Simpan katalog bandwidth ke Firebase
   formBW.addEventListener('submit', function (e) {
     e.preventDefault();
     const data = {
@@ -242,23 +242,31 @@ permalink: /settings
     bwForm.style.display = 'none';
     bwLoading.style.display = 'block';
 
-    firebase.database().ref('bandwidths').push(data)
-      .then(() => {
+    fetch('{{site.localurl}}/php/save_profile.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).then(response => response.json()).then(result => {
+        if (!result.success) throw new Error(result.message);
         formBW.reset();
         bwLoading.style.display = 'none';
         bwForm.style.display = 'block';
         loadBandwidths(); // Reload list
+      }).catch(error => {
+        alert('Gagal menyimpan profile: ' + error.message);
+        bwLoading.style.display = 'none';
+        bwForm.style.display = 'block';
       });
   });
 
-  // Tampilkan data dari Firebase
+  // Tampilkan katalog bandwidth dari Firebase
   function loadBandwidths() {
     bwLoading.style.display = 'block';
 	bwForm.style.display = 'none';
     bwList.innerHTML = '';
 
-    firebase.database().ref('bandwidths').once('value').then(snapshot => {
-      const items = snapshot.val();
+    fetch('{{site.localurl}}/php/get_profiles.php').then(response => response.json()).then(result => {
+      const items = result.data || [];
       bwLoading.style.display = 'none';
 
       if (!items) {
@@ -266,7 +274,7 @@ permalink: /settings
         return;
       }
 
-      Object.entries(items).forEach(([id, item]) => {
+      items.forEach(item => {
         const card = document.createElement('div');
         card.className = 'card mb-2';
         card.innerHTML = `
@@ -281,6 +289,10 @@ permalink: /settings
         `;
         bwList.appendChild(card);
       });
+    }).catch(error => {
+      bwLoading.style.display = 'none';
+      bwForm.style.display = 'block';
+      bwList.innerHTML = `<div class="text-danger">Gagal memuat profile: ${error.message}</div>`;
     });
   }
 
@@ -293,26 +305,7 @@ permalink: /settings
     formBW.scrollIntoView({ behavior: 'smooth' });
   });
 
-  // Setelah submit, tampilkan list lagi
-  formBW.addEventListener('submit', function (e) {
-    e.preventDefault();
-    const data = {
-      name: formBW.name.value,
-      rate_download: formBW.rate_download.value,
-      rate_upload: formBW.rate_upload.value
-    };
-
-    bwLoading.style.display = 'block';
-    bwForm.style.display = 'none';
-
-    firebase.database().ref('bandwidths').push(data)
-      .then(() => {
-        formBW.reset();
-        bwLoading.style.display = 'none';
-        bwList.style.display = 'block'; // Tampilkan list lagi
-        loadBandwidths();
-      });
-  });
+  // Daftar direfresh setelah submit oleh handler utama di atas.
   // Load awal
   loadBandwidths();
 </script>
@@ -370,12 +363,12 @@ permalink: /settings
         </div>
         <div class="col-md-6">
           <label class="form-label">Session Timeout</label>
-          <input type="text" class="form-control" name="session_timeout" placeholder="Contoh: 1h, 30m">
+          <input type="text" class="form-control" name="session_timeout" value="01:00:00" placeholder="Contoh: 01:00:00" required>
         </div>
         <div class="col-12">
           <label class="form-label">Script Scheduler (otomatis)</label>
           <textarea class="form-control" name="script" rows="4" readonly>
-:put (",ntf,3000,12h,3000,,Enable,"); 
+:put (",ntf,Enable,"); 
 {:local date [ /system clock get date ];
 :local year [ :pick $date 7 11 ];
 :local month [ :pick $date 0 3 ];
@@ -427,32 +420,31 @@ btnTambah.addEventListener("click", () => {
 });
 
 // Muat bandwidth dari Firebase
-firebase.database().ref("bandwidths").once("value").then(snapshot => {
-  snapshot.forEach(child => {
-    const val = child.val();
+fetch("{{site.localurl}}/php/get_profiles.php").then(response => response.json()).then(result => {
+  (result.data || []).forEach(val => {
     const opt = document.createElement("option");
-    opt.value = child.key;
+    opt.value = val.name;
     opt.textContent = `${val.name} (${val.rate_download}/${val.rate_upload})`;
     bandwidthSelect.appendChild(opt);
   });
 });
 
-// Ambil dan tampilkan daftar paket
+// Ambil dan tampilkan daftar paket dari MikroTik
 function loadPaketList() {
-  firebase.database().ref("pakets").once("value").then(snapshot => {
+  fetch("{{site.localurl}}/php/get_packages.php").then(response => response.json()).then(result => {
     listContainer.innerHTML = "";
-    if (!snapshot.exists()) {
+    const packages = result.data || [];
+    if (!packages.length) {
       listContainer.innerHTML = `<li class="list-group-item">Belum ada paket.</li>`;
       return;
     }
-    snapshot.forEach(child => {
-      const p = child.val();
+    packages.forEach(p => {
       const li = document.createElement("li");
       li.className = "list-group-item d-flex justify-content-between align-items-center";
       li.innerHTML = `
         <div>
           <strong>${p.nama}</strong> <span class="badge bg-info">${p.jenis}</span><br>
-          Bandwidth: ${p.bandwidth_id} | Harga: Rp${p.harga}
+          Bandwidth: ${p.bandwidth_id || '-'} | Harga: Rp${p.harga} | Timeout: ${p.session_timeout || '-'}
         </div>
         <span class="text-muted">${p.masa_aktif} hari</span>
       `;
@@ -466,15 +458,19 @@ formPaket.addEventListener("submit", function (e) {
   e.preventDefault();
   const data = Object.fromEntries(new FormData(formPaket).entries());
 
-  const id = Date.now();
-  firebase.database().ref("pakets/" + id).set(data).then(() => {
+  fetch("{{site.localurl}}/php/save_package.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  }).then(response => response.json()).then(result => {
+    if (!result.success) throw new Error(result.message);
     alert("Paket berhasil disimpan!");
     formPaket.reset(); // <- ganti juga ini
     formContainer.style.display = "none";
     listContainer.style.display = "block";
     listContainer.parentElement.querySelector("h5").textContent = "Daftar Paket Hotspot";
     loadPaketList();
-  }).catch(err => alert("Gagal simpan paket."));
+  }).catch(err => alert("Gagal simpan paket: " + err.message));
 });
 
 // Inisialisasi

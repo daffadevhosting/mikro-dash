@@ -105,7 +105,7 @@
             <label class="form-label">Pilih Profile</label>
             <select name="profile" class="form-select" required id="profile-select">
               <option value="">-- Pilih Profil --</option>
-              <!-- Options dimuat dari Firebase -->
+              <!-- Options dimuat dari MikroTik -->
             </select>
           </div>
           <div class="text-end">
@@ -120,10 +120,9 @@
 <script>
   const profileSelect = document.getElementById('profile-select');
 
-  // Load profil dari Firebase
-  firebase.database().ref('bandwidths').once('value').then(snapshot => {
-    snapshot.forEach(child => {
-      const data = child.val();
+  // Load profile bandwidth langsung dari MikroTik
+  fetch('{{site.localurl}}/php/get_profiles.php').then(res => res.json()).then(result => {
+    (result.data || []).forEach(data => {
       const option = document.createElement('option');
       option.value = data.name;
       option.textContent = data.name;

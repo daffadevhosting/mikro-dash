@@ -10,5 +10,5 @@ Jekyll::Hooks.register :site, :after_init do |site|
   site.config['sender_id'] = ENV['sender_id']
   site.config['app_id'] = ENV['app_id']
   site.config['measure_id'] = ENV['measure_id']
-  site.config['localurl'] = ENV['LOCAL_URL']
+  site.config['localurl'] = ENV['LOCAL_URL'] || 'http://127.0.0.1:8080'
 end

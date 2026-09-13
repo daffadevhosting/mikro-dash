@@ -14,7 +14,7 @@ ini_set('display_errors', 1);
 
 // Include library
 require_once __DIR__ . '/../api/connect.php';
-require_once __DIR__ . '/../vendor/PEAR2/Autoload.php';
+require_once __DIR__ . '/../PEAR2/Autoload.php';
 
 use PEAR2\Net\RouterOS;
 

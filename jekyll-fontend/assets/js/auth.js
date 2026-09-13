@@ -1,6 +1,7 @@
 // Cek status login
 
-  function logout() {
+  async function logout() {
+    if (!await uiConfirm('Keluar dari sesi admin ini?')) return;
     firebase.auth().signOut().then(function() {
       window.location.href = "/login";  // redirect ke halaman login setelah logout
     }).catch(function(error) {

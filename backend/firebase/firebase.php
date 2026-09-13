@@ -29,7 +29,7 @@ class FirebaseDB {
     private $database;
 
     public function __construct() {
-        $serviceAccountPath = __DIR__ . '/firebase-adminsdk.json';  // Harus Ada
+        $serviceAccountPath = __DIR__ . '/auth/secret/firebase-adminsdk.json';  // Harus Ada
 
         $factory = (new Factory)
             ->withServiceAccount($serviceAccountPath)

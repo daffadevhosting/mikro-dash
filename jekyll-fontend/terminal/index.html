@@ -1,0 +1,79 @@
+---
+layout: default
+title: Terminal MikroTik
+permalink: /terminal
+---
+
+<div class="container mt-4">
+  <div class="card bg-dark text-light border-secondary">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <div>
+        <i class="bi bi-terminal me-2"></i>Terminal MikroTik
+      </div>
+      <button type="button" class="btn btn-sm btn-outline-light" id="clear-terminal" title="Bersihkan output">
+        <i class="bi bi-trash3"></i>
+      </button>
+    </div>
+    <div class="card-body">
+      <p class="text-secondary small">Jalankan command RouterOS pada router yang terhubung.</p>
+      <form id="terminal-form">
+        <div class="input-group">
+          <span class="input-group-text bg-black text-success border-secondary">&gt;</span>
+          <input id="terminal-command" class="form-control bg-black text-light border-secondary" placeholder="/system/resource/print" autocomplete="off" required>
+          <button class="btn btn-success" type="submit">
+            <i class="bi bi-play-fill me-1"></i>Kirim
+          </button>
+        </div>
+      </form>
+      <pre id="terminal-output" class="mt-3 mb-0 p-3 bg-black text-success border border-secondary rounded" style="min-height: 320px; max-height: 620px; overflow: auto; white-space: pre-wrap;">Siap. Masukkan command RouterOS.</pre>
+    </div>
+  </div>
+</div>
+
+<script>
+const terminalForm = document.getElementById('terminal-form');
+const terminalCommand = document.getElementById('terminal-command');
+const terminalOutput = document.getElementById('terminal-output');
+
+function printTerminal(value) {
+  terminalOutput.textContent = typeof value === 'string'
+    ? value
+    : JSON.stringify(value, null, 2);
+  terminalOutput.scrollTop = terminalOutput.scrollHeight;
+}
+
+terminalForm.addEventListener('submit', async event => {
+  event.preventDefault();
+  const command = terminalCommand.value.trim();
+  if (!command) return;
+
+  printTerminal(`Menjalankan: ${command}\n`);
+  try {
+    const user = firebase.auth().currentUser;
+    if (!user) {
+      printTerminal('Sesi login tidak ditemukan. Silakan login ulang.');
+      return;
+    }
+
+    const token = await user.getIdToken();
+    const response = await fetch('{{site.localurl}}/php/terminal.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ command })
+    });
+    const result = await response.json();
+    printTerminal(result.success ? result.data : (result.error || result.data || 'Command gagal dijalankan.'));
+  } catch (error) {
+    printTerminal(`Gagal menghubungi terminal: ${error.message}`);
+  }
+});
+
+document.getElementById('clear-terminal').addEventListener('click', () => {
+  terminalCommand.value = '';
+  printTerminal('Siap. Masukkan command RouterOS.');
+  terminalCommand.focus();
+});
+</script>

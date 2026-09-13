@@ -42,17 +42,17 @@ const formTopup = document.getElementById('formTopup');
 const usernameSelect = formTopup.querySelector('select[name="username"]');
 const paketSelect = formTopup.querySelector('select[name="paket_id"]');
 
-// Load username dari Firebase
+// Load username langsung dari MikroTik
 function loadUsernames() {
   usernameSelect.innerHTML = '<option value="">Loading...</option>';
-  firebase.database().ref('custemers/hotspot/').once('value').then(snapshot => {
-    const users = snapshot.val();
+  fetch('{{site.localurl}}/php/get_all_users.php').then(res => res.json()).then(result => {
+    const users = result.data || [];
     usernameSelect.innerHTML = '';
-    if (users) {
-      Object.entries(users).forEach(([id, user]) => {
+    if (users.length) {
+      users.forEach(user => {
         const opt = document.createElement('option');
-        opt.value = user.username || id;
-        opt.textContent = user.username || id;
+        opt.value = user.username;
+        opt.textContent = user.username;
         usernameSelect.appendChild(opt);
       });
     } else {
@@ -61,16 +61,16 @@ function loadUsernames() {
   });
 }
 
-// Load paket dari Firebase
+// Load paket langsung dari MikroTik
 function loadPaketOptions() {
   paketSelect.innerHTML = '<option value="">Loading...</option>';
-  firebase.database().ref('pakets').once('value').then(snapshot => {
-    const pakets = snapshot.val();
+  fetch('{{site.localurl}}/php/get_packages.php').then(res => res.json()).then(result => {
+    const pakets = result.data || [];
     paketSelect.innerHTML = '';
-    if (pakets) {
-      Object.entries(pakets).forEach(([id, p]) => {
+    if (pakets.length) {
+      pakets.forEach(p => {
         const opt = document.createElement('option');
-        opt.value = id;
+        opt.value = p.id;
         opt.textContent = `${p.nama} - Rp${p.harga}`;
         paketSelect.appendChild(opt);
       });

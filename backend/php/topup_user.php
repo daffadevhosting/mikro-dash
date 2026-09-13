@@ -6,22 +6,9 @@ error_reporting(E_ERROR | E_PARSE);
 
 // Load Firebase dan Mikrotik
 require_once __DIR__ . '/../vendor/autoload.php';
-require_once __DIR__ . '/../vendor/PEAR2/Autoload.php';
+require_once __DIR__ . '/../PEAR2/Autoload.php';
+require_once __DIR__ . '/../api/connect.php';
 use PEAR2\Net\RouterOS;
-use Kreait\Firebase\Factory;
-use Dotenv\Dotenv;
-
-$dotenv = Dotenv::createImmutable(__DIR__);
-$dotenv->load();
-
-$firebaseUri = getenv('FIREBASE_DB');
-
-// Init Firebase
-$firebase = (new Factory)
-  ->withServiceAccount(__DIR__ . '/../firebase/firebase-adminsdk.json')
-  ->withDatabaseUri($firebaseUri);
-
-$db = $firebase->createDatabase();
 
 // Ambil data dari POST
 $data = json_decode(file_get_contents("php://input"), true);
@@ -34,29 +21,48 @@ if (!$username || !$paketId) {
   exit;
 }
 
-// Ambil router & paket
-$router = $db->getReference('routers/default')->getValue();
-$paket = $db->getReference('pakets/' . $paketId)->getValue();
-
-if (!$router || !$paket) {
-  echo json_encode(['success' => false, 'message' => 'Router/Paket tidak ditemukan']);
-  exit;
+// Validasi bahwa profile yang dipilih memang tersedia di MikroTik.
+$paket = ['nama' => $paketId, 'harga' => 0, 'price' => 0, 'time_limit' => '', 'quota_limit' => ''];
+$profileFound = false;
+$profiles = $client->sendSync(new RouterOS\Request('/ip/hotspot/user/profile/print'));
+foreach ($profiles as $profile) {
+  if ($profile->getProperty('name') !== $paketId) {
+    continue;
+  }
+  $profileFound = true;
+  $firebaseMetadata = $database->getReference('package_metadata/' . $paketId)->getValue();
+  if (is_array($firebaseMetadata)) {
+    $paket = array_merge($paket, $firebaseMetadata, ['nama' => $paketId]);
+  }
+  $comment = (string) ($profile->getProperty('comment') ?? '');
+  $prefix = 'mikrodash:package:';
+  if (strpos($comment, $prefix) === 0) {
+    $metadata = json_decode(substr($comment, strlen($prefix)), true);
+    if (is_array($metadata)) {
+      $paket = array_merge($paket, $metadata, ['nama' => $paketId]);
+    }
+  }
+  break;
 }
 
-// Koneksi Mikrotik
-try {
-  $client = new RouterOS\Client($router['ip'], $router['username'], $router['password']);
-} catch (Exception $e) {
-  echo json_encode(['success' => false, 'message' => 'Gagal konek ke Router: ' . $e->getMessage()]);
+if (!$profileFound) {
+  echo json_encode(['success' => false, 'message' => 'Paket tidak ditemukan di MikroTik']);
   exit;
 }
 
 // Siapkan parameter user
 $setRequest = new RouterOS\Request("/ip/hotspot/user/set");
-$findRequest = new RouterOS\Request("/ip/hotspot/user/print .proplist=.id");
-$findRequest->setArgument('?.name', $username);
+$id = null;
 
-$id = $client->sendSync($findRequest)->getArgument('.id');
+// Cari berdasarkan nama agar user disabled/expired tetap dapat di-topup.
+$findRequest = new RouterOS\Request('/ip/hotspot/user/print');
+foreach ($client->sendSync($findRequest) as $response) {
+  $responseName = (string) ($response->getProperty('name') ?? '');
+  if ($responseName !== '' && strcasecmp($responseName, $username) === 0) {
+    $id = $response->getProperty('.id') ?: $response->getArgument('.id');
+    break;
+  }
+}
 
 if (!$id) {
   echo json_encode(['success' => false, 'message' => 'User tidak ditemukan di Mikrotik']);
@@ -73,12 +79,16 @@ $comment = date('Y-m-d H:i') . " (Topup)";
 $setRequest->setArgument('.id', $id);
 $setRequest->setArgument('profile', $paket['nama']);
 $setRequest->setArgument('comment', $comment);
+$setRequest->setArgument('disabled', 'no');
 
 if ($timeLimit) $setRequest->setArgument('limit-uptime', $timeLimit);
 if ($quotaLimit) $setRequest->setArgument('limit-bytes-total', $quotaLimit);
 
 try {
   $client->sendSync($setRequest);
+  $resetRequest = new RouterOS\Request('/ip/hotspot/user/reset-counters');
+  $resetRequest->setArgument('.id', $id);
+  $client->sendSync($resetRequest);
 } catch (Exception $e) {
   echo json_encode(['success' => false, 'message' => 'Gagal set user: ' . $e->getMessage()]);
   exit;
@@ -89,10 +99,11 @@ $logData = [
   'username' => $username,
   'paket_id' => $paketId,
   'nama_paket' => $paket['nama'],
-  'harga' => $paket['harga'],
+  'harga' => (int) ($paket['price'] ?? $paket['harga'] ?? 0),
+  'price' => (int) ($paket['price'] ?? $paket['harga'] ?? 0),
   'waktu' => date('Y-m-d H:i:s'),
   'metode' => $metode
 ];
-$db->getReference('transaksi_topup')->push($logData);
+$database->getReference('transaksi_topup')->push($logData);
 
 echo json_encode(['success' => true]);
