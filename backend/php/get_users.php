@@ -19,7 +19,11 @@ try {
     $responses = $client->sendSync($request);
 
     foreach ($responses as $res) {
-        echo "User: " . $res->getProperty('name') . "<br>";
+        $username = (string) $res->getProperty('name');
+        if (strcasecmp($username, 'default-trial') === 0) {
+            continue;
+        }
+        echo "User: " . $username . "<br>";
     }
 
 } catch (Exception $e) {

@@ -26,7 +26,13 @@ try {
 
     $activeMap = [];
     foreach ($activeList as $active) {
-        $activeMap[$active->getProperty('user')] = [
+        $activeUsername = (string) $active->getProperty('user');
+        if ($active->getType() !== RouterOS\Response::TYPE_DATA
+            || trim($activeUsername) === ''
+            || strcasecmp($activeUsername, 'default-trial') === 0) {
+            continue;
+        }
+        $activeMap[$activeUsername] = [
             'address' => $active->getProperty('address') ?? '-',
             'mac' => $active->getProperty('mac-address') ?? '-',
             'uptime' => $active->getProperty('uptime') ?? '-',
@@ -37,7 +43,10 @@ try {
     $offlineUsers = [];
 
     foreach ($userList as $user) {
-        $username = $user->getProperty('name');
+        $username = (string) $user->getProperty('name');
+        if (strcasecmp($username, 'default-trial') === 0) {
+            continue;
+        }
         $profile = $user->getProperty('profile');
         $ip = '-';
         $mac = '-';

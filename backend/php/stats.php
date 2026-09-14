@@ -16,12 +16,31 @@ use PEAR2\Net\RouterOS;
 header('Content-Type: application/json');
 
 try {
-    $total = count($client->sendSync(new RouterOS\Request('/ip/hotspot/user/print')));
-    $online = count($client->sendSync(new RouterOS\Request('/ip/hotspot/active/print')));
+    $users = $client->sendSync(new RouterOS\Request('/ip/hotspot/user/print'));
+    $activeUsers = $client->sendSync(new RouterOS\Request('/ip/hotspot/active/print'));
+    $visibleUserCount = 0;
+    $visibleOnlineCount = 0;
+
+    foreach ($users as $user) {
+        $username = trim((string) $user->getProperty('name'));
+        if ($user->getType() === RouterOS\Response::TYPE_DATA
+            && $username !== ''
+            && strcasecmp($username, 'default-trial') !== 0) {
+            $visibleUserCount++;
+        }
+    }
+    foreach ($activeUsers as $activeUser) {
+        $username = trim((string) $activeUser->getProperty('user'));
+        if ($activeUser->getType() === RouterOS\Response::TYPE_DATA
+            && $username !== ''
+            && strcasecmp($username, 'default-trial') !== 0) {
+            $visibleOnlineCount++;
+        }
+    }
 
     echo json_encode([
-        'totalUsers' => $total,
-        'onlineUsers' => $online
+        'totalUsers' => $visibleUserCount,
+        'onlineUsers' => $visibleOnlineCount
     ]);
 } catch (Exception $e) {
     echo json_encode([
